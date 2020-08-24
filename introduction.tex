@@ -1,0 +1,19 @@
+\chapter{概述}
+
+\section{项目概述}
+
+本项目是在“龙芯杯”大赛方提供的FPGA实验平台（FPGA为Artix-7 XC7A200T）上实现一个片上系统（SOC）。其中，CPU基于MIPS 32 Rev 1指令集架构，包含指令缓存和数据缓存；外设包含SPI Flash,GPIO,MAC,DDR3,NAND,串口及LCD屏幕；能够启动并使用PMON操作系统、uCore操作系统，能够启动Linux至用户态初始化。功能方面能够通过大赛方提供的功能测试、性能测试、系统测试；性能方面频率达90MHz，每时钟周期指令数为龙芯GS132的27.044倍。
+
+\subsection{设计框架}
+EasterMIPS中的CPU采用顺序双发射五级流水线架构，实现了MIPS32 Rev 1的78条指令，18个CP0寄存器，8个中断，9种例外，8项转换检测缓冲区，固定页大小为4KB。
+CPU对外的访存通信通过四个接口，分别是Uncached属性指令接口、Cached属性指令接口、Uncached属性数据接口、Cached属性数据接口。四个接口通过AXI3协议，经过AXI Crossbar整合成为一个接口与外设交互。
+
+EasterMIPS实现了指令缓存 (I-Cache)与数据缓存 (D-Cache)，响应CPU的取指与访存请求。I-Cache与D-Cache大小均为16K，在连续命中时，能够实现不间断地流水返回数据。I-Cache与D-Cache分别引出一个AXI接口。D-Cache能够缓冲CPU的写请求，并且实现了一个写回缓存 (Victim Cache)，兼具了缓存与写回队列的功能。
+
+\subsection{系统概述}
+EasterMips完整支持PMON和Ucore启动运行所需要的指令集，并且支持这这两个系统的全部异常处理。可以完全的运行这两个系统，并执行应用程序。
+
+对于Linux，通过添加CFLAGS构建选项限制分支及修改内核代码去除自陷指令，完成了内核部分的的指令支持。同时使用Buildroot工具链完成了Ramdisk的裁剪构建，去除了原ramdisk中不支持的指令。该ramdisk在官方固件上完成了测试，支持简单的性能监控及登录鉴权。但受限于时间，EasterMips目前仅能完内核初始化过程，无法进入用户态。
+
+\subsection{外设概述}
+EasterMips支持SPI Flash板载引导芯片, GPIO, MAC网络控制器, DDR3内存控制器,NAND Flash板载储存, Urat串口通信(RS232), LCD显示。其中LCD屏幕在硬件系统初始化时会显示RGB565格式的16位图像，在系统中经由CONFREG进行显示控制。
